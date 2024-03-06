@@ -54,7 +54,8 @@ jobs:
               echo "Latest release tag: $release_tag"
 
               # Download the release asset (assuming it's a ZIP file)
-              download_url="https://github.com/$repo/releases/download/$release_tag/$(basename $repo)-$release_tag.zip"
+              instrumentation="-instrumentation"
+              download_url="https://github.com/$repo/releases/download/$release_tag/$(basename $repo)$instrumentation-$release_tag.zip"
               echo "Downloading $download_url"
               curl -L -o "$repo-$release_tag.zip" "$download_url"
 
