@@ -2,7 +2,7 @@ name: Combine Releases
 
 on:
   workflow_run:
-    workflows: ["Download and Combine Releases"]
+    workflows: ["Combine Releases"]
     types:
       - completed
 
@@ -23,8 +23,8 @@ jobs:
       - name: Set up Git
         run: git config --global user.email "action@github.com" && git config --global user.name "GitHub Action"
 
-      - name: Download and Combine Releases
-        id: download_and_combine
+      - name: Combine Releases
+        id: combine_releases
         run: |
           #!/bin/bash
 
@@ -90,7 +90,6 @@ jobs:
 
           # Create a semantic version tag
           echo "::set-output name=semantic_version::$semantic_version"
-        shell: bash
 
   tag_release:
     needs: combine_releases
