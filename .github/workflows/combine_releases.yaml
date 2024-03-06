@@ -78,7 +78,7 @@ jobs:
 
           # Combine the extracted contents into a single release ZIP
           echo "Combining releases into a single ZIP file"
-         # zip -r "combined-releases.zip" "${repos[@]/#/combined-releases/}"
+          zip -r "combined-releases.zip" "${repos[@]/#/combined-releases/}"
 
           # Upload the combined release ZIP to the target repository
         # echo "Uploading combined release to $target_repo"
