@@ -143,6 +143,7 @@ jobs:
           echo "CURRENT=${PWD}" >> $GITHUB_ENV
           cd ${HOME}/myrelease
           zip -r ${HOME}/myrelease/${{ env.RELEASE_NAME}}${{ steps.set_tag.outputs.tag }}.zip *.jar
+          ls -ltr -r ${HOME}/myrelease/${{ env.RELEASE_NAME}}${{ steps.set_tag.outputs.tag }}.zip *.jar
           cd ${{env.CURRENT}}
 
       - name: Create Release
