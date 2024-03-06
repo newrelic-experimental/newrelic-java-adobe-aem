@@ -81,7 +81,7 @@ jobs:
           zip -r "combined-releases.zip" myrelease
           # Upload the combined release ZIP to the target repository
           # echo "Uploading combined release to $target_repo"
-          upload_url=$(curl -s -H "Authorization: Bearer $token" "https://api.github.com/repos/$target_repo/releases/latest" | jq -r '.upload_url')
+          upload_url=$(curl -s -H "Authorization: Bearer $token" "https://api.github.com/repos/$target_repo/releases/latest" | grep -o '"upload_url": "[^"]*' | cut -d'"' -f4)
           upload_url="${upload_url%\{*}"  # Remove query parameters
           echo "Upload URL: $upload_url"
 
