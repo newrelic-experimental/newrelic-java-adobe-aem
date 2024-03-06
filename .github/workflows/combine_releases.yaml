@@ -87,7 +87,8 @@ jobs:
           rm "combined-releases.zip"
 
           # Extract semantic version from the latest release tags
-          semantic_version=$(echo "v1.0.0" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+")
+          semantic_version="v1.0.0"
+          # semantic_version=$(echo "v1.0.0" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+")
           echo "Semantic Version: $semantic_version"
 
           # Create a semantic version tag
