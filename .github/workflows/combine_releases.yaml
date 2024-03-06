@@ -57,7 +57,7 @@ jobs:
               echo "Latest release tag: $release_tag"
 
               # Extract the asset name from the release tag
-              asset_name=$(echo "$repo-instrumentation')
+              asset_name=$(echo "$repo-instrumentation")
               download_url="https://github.com/$repo/releases/download/$release_tag/$asset_name-$release_tag.zip"
 
               echo "Downloading $download_url"
