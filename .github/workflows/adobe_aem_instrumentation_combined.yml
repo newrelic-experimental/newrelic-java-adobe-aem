@@ -37,8 +37,10 @@ jobs:
             echo "Processing $repo"
 
             # Get the latest release tag
-            release_tag=$(curl -s -H "Authorization: Bearer $token" "https://api.github.com/repos/$repo/releases/latest" | jq -r '.tag_name')
-
+            # release_tag=$(curl -s -H "Authorization: Bearer $token" "https://api.github.com/repos/$repo/releases/latest" | jq -r '.tag_name')
+            echo "API Response: $(curl -s -H "Authorization: $token" "https://api.github.com/repos/$repo/releases/latest")"
+            release_tag=$(curl -s -H "Authorization: $token" "https://api.github.com/repos/$repo/releases/latest" | jq -r '.tag_name')
+            echo "Release Tag: $release_tag"
             # Download the release .zip file
             wget --header="Authorization: Bearer $token" "https://github.com/$repo/archive/$release_tag.zip" -O "$temp_dir/$repo-$release_tag.zip"
 
