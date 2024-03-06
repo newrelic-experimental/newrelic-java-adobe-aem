@@ -72,22 +72,22 @@ jobs:
 
           # Combine the extracted contents into a single release ZIP
           echo "Combining releases into a single ZIP file"
-          zip -r "combined-releases.zip" "${repos[@]/#/combined-releases/}"
+         # zip -r "combined-releases.zip" "${repos[@]/#/combined-releases/}"
 
           # Upload the combined release ZIP to the target repository
-          echo "Uploading combined release to $target_repo"
-          upload_url=$(curl -s -H "Authorization: Bearer $token" "https://api.github.com/repos/$target_repo/releases/latest" | jq -r '.upload_url')
-          upload_url="${upload_url%\{*}"  # Remove query parameters
-          echo "Upload URL: $upload_url"
+        # echo "Uploading combined release to $target_repo"
+        #  upload_url=$(curl -s -H "Authorization: Bearer $token" "https://api.github.com/repos/$target_repo/releases/latest" | jq -r '.upload_url')
+        #  upload_url="${upload_url%\{*}"  # Remove query parameters
+        #  echo "Upload URL: $upload_url"
 
           # Upload the combined release ZIP
-          curl -H "Authorization: Bearer $token" -H "Content-Type: application/zip" --data-binary "@combined-releases.zip" "$upload_url?name=combined-releases.zip"
+       #   curl -H "Authorization: Bearer $token" -H "Content-Type: application/zip" --data-binary "@combined-releases.zip" "$upload_url?name=combined-releases.zip"
 
           # Clean up: Remove the combined release ZIP
-          rm "combined-releases.zip"
+        #  rm "combined-releases.zip"
 
           # Extract semantic version from the latest release tags
-          semantic_version="v1.0.0"
+         # semantic_version="v1.0.0"
           # semantic_version=$(echo "v1.0.0" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+")
          # echo "Semantic Version: $semantic_version"
 
