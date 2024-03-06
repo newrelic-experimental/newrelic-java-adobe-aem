@@ -1,10 +1,12 @@
 name: Combine Releases
 
 on:
-  workflow_run:
-    workflows: ["Combine Releases"]
-    types:
-      - completed
+  workflow_dispatch:
+    inputs:
+      manual_trigger:
+        description: 'Trigger the Combine Releases workflow'
+        required: true
+        default: 'manual'
 
 jobs:
   combine_releases:
@@ -23,8 +25,8 @@ jobs:
       - name: Set up Git
         run: git config --global user.email "action@github.com" && git config --global user.name "GitHub Action"
 
-      - name: Combine Releases
-        id: combine_releases
+      - name: Download and Combine Releases
+        id: download_and_combine
         run: |
           #!/bin/bash
 
@@ -90,3 +92,27 @@ jobs:
 
           # Create a semantic version tag
           echo "::set-output name=semantic_version::$semantic_version"
+        shell: bash
+
+  tag_release:
+    needs: combine_releases
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Git
+        run: git config --global user.email "action@github.com" && git config --global user.name "GitHub Action"
+
+      - name: Tag Release
+        run: |
+          #!/bin/bash
+
+          # Get semantic version from the previous job
+          semantic_version=${{ needs.combine_releases.outputs.semantic_version }}
+          echo "Semantic Version to tag: $semantic_version"
+
+          # Tag the release
+          git tag "$semantic_version"
+          git push --tags
+        shell: bash
