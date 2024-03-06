@@ -25,11 +25,9 @@ jobs:
       - name: Set up Git
         run: git config --global user.email "action@github.com" && git config --global user.name "GitHub Action"
 
-      - name: Download and Combine Releases
-        id: download_and_combine
+      - name: Combine Releases
+        id: combine_releases
         run: |
-          #!/bin/bash
-
           # Define the repositories
           repos=(
             "newrelic-experimental/newrelic-java-apache-felix"
@@ -50,16 +48,16 @@ jobs:
             echo "Processing repository: $repo"
 
             # Get the latest release tag
-            release_tag=$(curl -s -H "Authorization: $token" "https://api.github.com/repos/$repo/releases/latest" | jq -r '.tag_name')
+            release_tag=$(curl -s -H "Authorization: Bearer $token" "https://api.github.com/repos/$repo/releases/latest" | jq -r '.tag_name')
 
             if [ "$release_tag" != "null" ]; then
               echo "Latest release tag: $release_tag"
 
               # Download the release asset (assuming it's a ZIP file)
-              download_url="https://github.com/$repo/archive/$release_tag.zip"
+              download_url="https://github.com/$repo/releases/download/$release_tag/$(basename $repo)-$release_tag.zip"
               echo "Downloading $download_url"
               curl -L -o "$repo-$release_tag.zip" "$download_url"
-              
+
               # Unzip the downloaded file
               unzip "$repo-$release_tag.zip" -d "$repo-$release_tag"
 
@@ -76,12 +74,12 @@ jobs:
 
           # Upload the combined release ZIP to the target repository
           echo "Uploading combined release to $target_repo"
-          upload_url=$(curl -s -H "Authorization: $token" "https://api.github.com/repos/$target_repo/releases/latest" | jq -r '.upload_url')
+          upload_url=$(curl -s -H "Authorization: Bearer $token" "https://api.github.com/repos/$target_repo/releases/latest" | jq -r '.upload_url')
           upload_url="${upload_url%\{*}"  # Remove query parameters
           echo "Upload URL: $upload_url"
 
           # Upload the combined release ZIP
-          curl -H "Authorization: $token" -H "Content-Type: application/zip" --data-binary "@combined-releases.zip" "$upload_url?name=combined-releases.zip"
+          curl -H "Authorization: Bearer $token" -H "Content-Type: application/zip" --data-binary "@combined-releases.zip" "$upload_url?name=combined-releases.zip"
 
           # Clean up: Remove the combined release ZIP
           rm "combined-releases.zip"
@@ -92,27 +90,3 @@ jobs:
 
           # Create a semantic version tag
           echo "::set-output name=semantic_version::$semantic_version"
-        shell: bash
-
-  tag_release:
-    needs: combine_releases
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Set up Git
-        run: git config --global user.email "action@github.com" && git config --global user.name "GitHub Action"
-
-      - name: Tag Release
-        run: |
-          #!/bin/bash
-
-          # Get semantic version from the previous job
-          semantic_version=${{ needs.combine_releases.outputs.semantic_version }}
-          echo "Semantic Version to tag: $semantic_version"
-
-          # Tag the release
-          git tag "$semantic_version"
-          git push --tags
-        shell: bash
