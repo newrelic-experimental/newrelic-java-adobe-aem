@@ -48,6 +48,9 @@ jobs:
             echo "Processing repository: $repo"
 
             # Get the latest release tag
+            response=$(curl -s -w "%{http_code}" -H "Authorization: Bearer $token" "https://api.github.com/repos/$repo/releases/latest" | jq -r '.tag_name')
+            status_code=$(echo "$response" | tail -n1)
+            echo "Failed to fetch release tag. HTTP Status Code: $status_code"
             release_tag=$(curl -s -H "Authorization: Bearer $token" "https://api.github.com/repos/$repo/releases/latest" | jq -r '.tag_name')
             echo "Latest release tag: $release_tag"
             if [ "$release_tag" != "null" ]; then
