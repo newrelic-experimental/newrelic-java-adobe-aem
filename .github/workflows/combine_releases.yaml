@@ -76,29 +76,108 @@ jobs:
             fi
           done
 
-          # Combine the extracted contents into a single release ZIP
-          echo "Combining releases into a single ZIP file"
-          zip -r "combined-releases.zip" myrelease
-          # Upload the combined release ZIP to the target repository
-          # echo "Uploading combined release to $target_repo"
-          response=$(curl -s -H "Authorization: Bearer $token" "https://api.github.com/repos/$target_repo/releases/latest")
-          echo "GitHub API Response: $response"
-          upload_url=$(echo "$response" | grep -o '"upload_url": "[^"]*' | cut -d'"' -f4)
-          echo "Extracted Upload URL: $upload_url"
+      - name: Identify Release Type
+        id: define_release_type
+        run: |
+           echo "Generating changelog to check type of release..."
+           old_tag=$(git describe --abbrev=0 --tags 2>/dev/null) || true
+           if [[ -n "$old_tag" ]]; then
+            changelog=$(git log --pretty=format:"- %s (%h)" $old_tag..HEAD)
+           fi
+           if echo "$changelog" | grep -iqE '\bBREAKING CHANGE\b'; then
+            echo "RELEASE_TYPE=major" >> $GITHUB_ENV
+           elif echo "$changelog" | grep -iqE '\bfeat\b'; then
+            echo "RELEASE_TYPE=minor" >> $GITHUB_ENV
+           else
+            echo "RELEASE_TYPE=patch" >> $GITHUB_ENV
+           fi
+           
+      - name: Set release version
+        id: set_release_version
+        run: |
+          major_version=1
+          minor_version=0
+          patch_revision=0
 
-          upload_url="${upload_url%\{*}"  # Remove query parameters
-          echo "Upload URL: $upload_url"
+          # Retrieve the latest release tag
+          latest_tag=$(git describe --abbrev=0 --tags 2>/dev/null) || true
+          echo "LATEST_TAG=${latest_tag}" >> $GITHUB_ENV
 
-          # Upload the combined release ZIP
-          curl -H "Authorization: Bearer $token" -H "Content-Type: application/zip" --data-binary "@combined-releases.zip" "$upload_url?name=combined-releases.zip"
+          if [[ -n "$latest_tag" && $latest_tag == v* ]]; then
+            # Extract the major and minor versions from the latest tag
+            current_major_version=$(echo $latest_tag | cut -d'.' -f1 | sed 's/v//')
+            current_minor_version=$(echo $latest_tag | cut -d'.' -f2)
+            current_patch_revision=$(echo $latest_tag | cut -d'.' -f3)
+    
+            if [ "${{ env.RELEASE_TYPE }}" = "major" ]; then
+              major_version=$((current_major_version +1 ))
+            elif [ "${{ env.RELEASE_TYPE }}" = "minor" ]; then
+              minor_version=$((current_minor_version + 1))
+              major_version=$((current_major_version))
+            else
+              patch_revision=$((current_patch_revision + 1))
+              minor_version=$((current_minor_version))
+              major_version=$((current_major_version))
+            fi
+         
+          fi
 
-          # Clean up: Remove the combined release ZIP
-          rm "combined-releases.zip"
+          # Set the release version environment variable
+          release_version="v${major_version}.${minor_version}.${patch_revision}"
+          echo "RELEASE_VERSION=${release_version}" >> $GITHUB_ENV
 
-          # Extract semantic version from the latest release tags
-           semantic_version="v1.0.0"
-          # semantic_version=$(echo "v1.0.0" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+")
-           echo "Semantic Version: $semantic_version"
+      - name: Set Tag
+        id: set_tag
+        run: echo "::set-output name=tag::${{ env.RELEASE_VERSION }}"
 
-          # Create a semantic version tag
-          echo "::set-output name=semantic_version::$semantic_version"
+      - name: Set release name
+        id: set_release_name
+        run: |
+          repo_name="${{ github.repository }}"
+          sanitized_repo_name=$(echo "$repo_name" | awk -F 'newrelic-java-' '{print $2}')
+          echo "RELEASE_NAME=${sanitized_repo_name}-instrumentation-" >> $GITHUB_ENV
+          previous_tag=$(git describe --abbrev=0 --tags HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD)
+
+      - name: Create Archive
+        run: |
+          echo "CURRENT=${PWD}" >> $GITHUB_ENV
+          cd ${HOME}/myrelease
+          zip -r /tmp/to/${{ env.RELEASE_NAME}}${{ steps.set_tag.outputs.tag }}.zip *.jar
+          cd ${{env.CURRENT}}
+
+      - name: Create Release
+        id: create_release
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            try {
+                var changelog = ``;
+                var tag = '' + `${{ steps.set_tag.outputs.tag }}`;
+                const archivePath = '/tmp/to/${{ env.RELEASE_NAME}}${{ steps.set_tag.outputs.tag }}.zip';
+                var response = await github.rest.repos.createRelease({
+                  draft:false,
+                  generate_release_notes:true,
+                  name:tag,
+                  owner:context.repo.owner,
+                  prerelease:false,
+                  repo:context.repo.repo,
+                  tag_name:tag,
+                  body:changelog
+                });
+
+                core.exportVariable('RELEASE_ID', response.data.id);
+                core.exportVariable('RELEASE_URL', response.data.html_url);
+                core.exportVariable('RELEASE_UPLOAD_URL', response.data.upload_url);
+              } catch (error) {
+                core.setFailed(error.message);
+              }
+      - name: Upload Release Artifacts
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          asset_path: /tmp/to/${{ env.RELEASE_NAME}}${{ steps.set_tag.outputs.tag }}.zip
+          asset_name: ${{ env.RELEASE_NAME}}${{ steps.set_tag.outputs.tag }}.zip
+          upload_url: ${{ env.RELEASE_UPLOAD_URL }}
+          asset_content_type: application/zip
