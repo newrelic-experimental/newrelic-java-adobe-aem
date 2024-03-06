@@ -57,8 +57,7 @@ jobs:
               echo "Latest release tag: $release_tag"
 
               # Extract the asset name from the release tag
-              repo_name=$(echo $repo | cut -d'/' -f3 | sed 's/^newrelic-java-//')
-
+              repo_name=$(basename $repo | sed 's/^newrelic-java-//')
               asset_name=$(echo "$repo_name-instrumentation")
               
               download_url="https://github.com/$repo/releases/download/$release_tag/$asset_name-$release_tag.zip"
