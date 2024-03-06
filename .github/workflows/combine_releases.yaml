@@ -142,7 +142,7 @@ jobs:
         run: |
           echo "CURRENT=${PWD}" >> $GITHUB_ENV
           cd ${HOME}/myrelease
-          zip -r /tmp/to/${{ env.RELEASE_NAME}}${{ steps.set_tag.outputs.tag }}.zip *.jar
+          zip -r ${HOME}/${{ env.RELEASE_NAME}}${{ steps.set_tag.outputs.tag }}.zip *.jar
           cd ${{env.CURRENT}}
 
       - name: Create Release
@@ -154,7 +154,7 @@ jobs:
             try {
                 var changelog = ``;
                 var tag = '' + `${{ steps.set_tag.outputs.tag }}`;
-                const archivePath = '/tmp/to/${{ env.RELEASE_NAME}}${{ steps.set_tag.outputs.tag }}.zip';
+                const archivePath = '${HOME}/${{ env.RELEASE_NAME}}${{ steps.set_tag.outputs.tag }}.zip';
                 var response = await github.rest.repos.createRelease({
                   draft:false,
                   generate_release_notes:true,
@@ -177,7 +177,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          asset_path: /tmp/to/${{ env.RELEASE_NAME}}${{ steps.set_tag.outputs.tag }}.zip
+          asset_path: ${HOME}/${{ env.RELEASE_NAME}}${{ steps.set_tag.outputs.tag }}.zip
           asset_name: ${{ env.RELEASE_NAME}}${{ steps.set_tag.outputs.tag }}.zip
           upload_url: ${{ env.RELEASE_UPLOAD_URL }}
           asset_content_type: application/zip
