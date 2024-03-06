@@ -49,7 +49,7 @@ jobs:
 
             # Get the latest release tag
             release_tag=$(curl -s -H "Authorization: Bearer $token" "https://api.github.com/repos/$repo/releases/latest" | jq -r '.tag_name')
-
+echo "Latest release tag: $release_tag"
             if [ "$release_tag" != "null" ]; then
               echo "Latest release tag: $release_tag"
 
@@ -67,6 +67,7 @@ jobs:
               rm "$asset_name-$release_tag.zip"
             else
               echo "Failed to retrieve the release tag for $repo"
+              echo "Latest release tag: $release_tag"
             fi
           done
 
