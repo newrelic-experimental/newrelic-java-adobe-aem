@@ -1,0 +1,66 @@
+name: Combine Releases
+
+on:
+  workflow_dispatch:
+
+jobs:
+  combine_releases:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '11'
+
+      - name: Combine Releases
+        run: |
+          target_repo="newrelic-experimental/newrelic-java-adobe-aem"  # Replace with your target repository
+          token=$GITHUB_TOKEN  # GitHub token for authentication
+
+          repos=(
+            "newrelic-experimental/newrelic-java-apache-felix"
+            "newrelic-experimental/newrelic-java-apache-sling"
+            "newrelic-experimental/newrelic-java-apache-jackrabbit"
+            "newrelic-experimental/newrelic-java-apache-jackrabbit-oak"
+            "newrelic-experimental/newrelic-java-adobe-granite"
+          )
+
+          # Create a temporary directory
+          temp_dir=$(mktemp -d)
+
+          for repo in "${repos[@]}"; do
+            echo "Processing $repo"
+
+            # Get the latest release tag
+            release_tag=$(curl -s -H "Authorization: Bearer $token" "https://api.github.com/repos/$repo/releases/latest" | jq -r '.tag_name')
+
+            # Download the release .zip file
+            wget --header="Authorization: Bearer $token" "https://github.com/$repo/archive/$release_tag.zip" -O "$temp_dir/$repo-$release_tag.zip"
+
+            echo "Downloaded $repo latest release: $release_tag"
+          done
+
+          # Extract the contents of each release .zip file
+          for zip_file in $temp_dir/*.zip; do
+            unzip -q "$zip_file" -d "$temp_dir"
+          done
+
+          # Combine all extracted contents into a single release .zip file
+          zip -qr "$temp_dir/combined-release.zip" "$temp_dir"/*
+
+          # Upload the combined release .zip file to the target repository
+          curl -X POST \
+            -H "Authorization: Bearer $token" \
+            -H "Content-Type: application/zip" \
+            --upload-file "$temp_dir/combined-release.zip" \
+            "https://uploads.github.com/repos/$target_repo/releases/latest/assets?name=combined-release.zip"
+
+          echo "Uploaded combined-release.zip to $target_repo"
+
+          # Clean up the temporary directory
+          rm -rf "$temp_dir"
