@@ -53,17 +53,18 @@ jobs:
             if [ "$release_tag" != "null" ]; then
               echo "Latest release tag: $release_tag"
 
-              # Download the release asset (assuming it's a ZIP file)
-              instrumentation="-instrumentation"
-              download_url="https://github.com/$repo/releases/download/$release_tag/$(basename $repo)$instrumentation-$release_tag.zip"
+              # Extract the asset name from the release tag
+              asset_name=$(echo "$release_tag" | sed 's/-instrumentation//')
+              download_url="https://github.com/$repo/releases/download/$release_tag/$asset_name-$release_tag.zip"
+
               echo "Downloading $download_url"
-              curl -L -o "$repo-$release_tag.zip" "$download_url"
+              curl -L -o "$asset_name-$release_tag.zip" "$download_url"
 
               # Unzip the downloaded file
-              unzip "$repo-$release_tag.zip" -d "$repo-$release_tag"
+              unzip "$asset_name-$release_tag.zip" -d "$asset_name-$release_tag"
 
               # Clean up the ZIP file
-              rm "$repo-$release_tag.zip"
+              rm "$asset_name-$release_tag.zip"
             else
               echo "Failed to retrieve the release tag for $repo"
             fi
