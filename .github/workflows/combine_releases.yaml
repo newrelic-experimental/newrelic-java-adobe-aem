@@ -155,7 +155,7 @@ jobs:
             try {
                 var changelog = ``;
                 var tag = '' + `${{ steps.set_tag.outputs.tag }}`;
-                const archivePath = '${HOME}/myrelease/${{ env.RELEASE_NAME}}${{ steps.set_tag.outputs.tag }}.zip';
+                const archivePath = '/home/runner/myrelease/${{ env.RELEASE_NAME}}${{ steps.set_tag.outputs.tag }}.zip';
                 var response = await github.rest.repos.createRelease({
                   draft:false,
                   generate_release_notes:true,
