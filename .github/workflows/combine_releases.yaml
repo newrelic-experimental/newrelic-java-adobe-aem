@@ -83,7 +83,7 @@ jobs:
           # echo "Uploading combined release to $target_repo"
           upload_url=$(curl -s -H "Authorization: Bearer $token" "https://api.github.com/repos/$target_repo/releases/latest" | jq -r '.upload_url')
           upload_url="${upload_url%\{*}"  # Remove query parameters
-          #  echo "Upload URL: $upload_url"
+          echo "Upload URL: $upload_url"
 
           # Upload the combined release ZIP
           curl -H "Authorization: Bearer $token" -H "Content-Type: application/zip" --data-binary "@combined-releases.zip" "$upload_url?name=combined-releases.zip"
