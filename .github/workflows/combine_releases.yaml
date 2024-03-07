@@ -51,28 +51,36 @@ jobs:
             response=$(curl -s -w "%{http_code}"  "https://api.github.com/repos/$repo/releases/latest" )
             status_code=$(echo "$response" | tail -n1)
             echo "Failed to fetch release tag. HTTP Status Code: $status_code"
-            release_tag=$(curl -s  "https://api.github.com/repos/$repo/releases/latest" | jq -r '.tag_name')
-            echo "Latest release tag: $release_tag"
-            if [ "$release_tag" != "null" ]; then
+            
+            # Only proceed if HTTP status code is 200 (OK)
+            if [ "$status_code" -eq 200 ]; then
+              release_tag=$(curl -s  "https://api.github.com/repos/$repo/releases/latest" | jq -r '.tag_name')
               echo "Latest release tag: $release_tag"
-
-              # Extract the asset name from the release tag
-              repo_name=$(basename $repo | sed 's/^newrelic-java-//')
-              asset_name=$(echo "$repo_name-instrumentation")
               
-              download_url="https://github.com/$repo/releases/download/$release_tag/$asset_name-$release_tag.zip"
+              # Check if the release tag is not null
+              if [ "$release_tag" != "null" ]; then
+                echo "Latest release tag: $release_tag"
 
-              echo "Downloading $download_url"
-              curl -L -o "$asset_name-$release_tag.zip" "$download_url"
+                # Extract the asset name from the release tag
+                repo_name=$(basename $repo | sed 's/^newrelic-java-//')
+                asset_name=$(echo "$repo_name-instrumentation")
+                
+                download_url="https://github.com/$repo/releases/download/$release_tag/$asset_name-$release_tag.zip"
 
-              # Unzip the downloaded file
-              unzip "$asset_name-$release_tag.zip" -d "${HOME}/myrelease"
+                echo "Downloading $download_url"
+                curl -L -o "$asset_name-$release_tag.zip" "$download_url"
 
-              # Clean up the ZIP file
-              rm "$asset_name-$release_tag.zip"
+                # Unzip the downloaded file
+                unzip "$asset_name-$release_tag.zip" -d "${HOME}/myrelease"
+
+                # Clean up the ZIP file
+                rm "$asset_name-$release_tag.zip"
+              else
+                echo "Failed to retrieve the release tag for $repo"
+                echo "Latest release tag: $release_tag"
+              fi
             else
-              echo "Failed to retrieve the release tag for $repo"
-              echo "Latest release tag: $release_tag"
+              echo "Skipping repository due to HTTP status code: $status_code"
             fi
           done
 
@@ -110,7 +118,7 @@ jobs:
             current_patch_revision=$(echo $latest_tag | cut -d'.' -f3)
     
             if [ "${{ env.RELEASE_TYPE }}" = "major" ]; then
-              major_version=$((current_major_version +1 ))
+              major_version=$((current_major_version + 1))
             elif [ "${{ env.RELEASE_TYPE }}" = "minor" ]; then
               minor_version=$((current_minor_version + 1))
               major_version=$((current_major_version))
@@ -119,7 +127,6 @@ jobs:
               minor_version=$((current_minor_version))
               major_version=$((current_major_version))
             fi
-         
           fi
 
           # Set the release version environment variable
