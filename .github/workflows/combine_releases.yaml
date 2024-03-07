@@ -1,4 +1,4 @@
-name: Combine Releases v1
+name: Combine Releases v1 
 
 on:
   workflow_dispatch:
