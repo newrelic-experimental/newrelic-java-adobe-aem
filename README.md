@@ -6,6 +6,7 @@ These include
 [Apache Jackrabbit](https://github.com/newrelic-experimental/newrelic-java-apache-jackrabbit)   
 [Apache Jackrabbit Oak](https://github.com/newrelic-experimental/newrelic-java-apache-jackrabbit-oak)  
 [Adobe Granite](https://github.com/newrelic-experimental/newrelic-java-adobe-granite)   
+[Adobe AEM API](https://github.com/newrelic-experimental/newrelic-java-aem-api)   
 
 Release contains all the appropriate instrumentation extension jars from these repositories and is updated whenever one of them is updated.   
 ## Installation ##
